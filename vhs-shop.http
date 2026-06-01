@@ -1,0 +1,251 @@
+﻿### VHS Shop примеры HTTP запросов
+
+@baseUrl = http://localhost:5221/api
+### Создание данных для теста
+### Создать VHS кассету #1: "Матрица" (1999)
+POST {{baseUrl}}/cassettes
+Content-Type: application/json
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "movieTitle": "Матрица",
+  "releaseYear": 1999,
+  "director": "Вачовски Лана и Лилли",
+  "genre": "Sci-Fi",
+  "durationMinutes": 136,
+  "condition": "Отличное",
+  "cassetteYear": 2000,
+  "language": "Английский",
+  "hasSubtitles": true,
+  "rating": "R",
+  "price": 400.00,
+  "stock": 5,
+  "description": "Фильм о виртуальной реальности и восстании машин"
+}
+
+### Создать VHS кассету 2: "Интерстеллар" (2014)
+POST {{baseUrl}}/cassettes
+Content-Type: application/json
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440002",
+  "movieTitle": "Интерстеллар",
+  "releaseYear": 2014,
+  "director": "Кристофер Нолан",
+  "genre": "Sci-Fi",
+  "durationMinutes": 169,
+  "condition": "Хорошее",
+  "cassetteYear": 2015,
+  "language": "Английский",
+  "hasSubtitles": true,
+  "rating": "PG-13",
+  "price": 450.00,
+  "stock": 3,
+  "description": "Путешествие за пределы галактики в поисках нового дома"
+}
+
+### Создать VHS кассету 3: "Криминальное чтиво" (1994)
+POST {{baseUrl}}/cassettes
+Content-Type: application/json
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440003",
+  "movieTitle": "Криминальное чтиво",
+  "releaseYear": 1994,
+  "director": "Квентин Тарантино",
+  "genre": "Crime",
+  "durationMinutes": 154,
+  "condition": "Среднее",
+  "cassetteYear": 1995,
+  "language": "Английский",
+  "hasSubtitles": false,
+  "rating": "R",
+  "price": 320.00,
+  "stock": 2,
+  "description": "Переплетающиеся истории преступников в Лос-Анджелесе"
+}
+
+### Создать VHS кассету 4: "Титаник" (1997)
+POST {{baseUrl}}/cassettes
+Content-Type: application/json
+
+{
+  "id": "550e8400-e29b-41d4-a716-446655440004",
+  "movieTitle": "Титаник",
+  "releaseYear": 1997,
+  "director": "Джеймс Кэмерон",
+  "genre": "Drama",
+  "durationMinutes": 194,
+  "condition": "Отличное",
+  "cassetteYear": 1998,
+  "language": "Английский",
+  "hasSubtitles": true,
+  "rating": "PG-13",
+  "price": 380.00,
+  "stock": 4,
+  "description": "История любви на фоне крушения легендарного корабля"
+}
+
+
+### ПОКУПАТЕЛИ
+
+### 5. Зарегистрировать покупателя 1
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+  "id": "660e8400-e29b-41d4-a716-446655440001",
+  "fullName": "Иван Петров",
+  "email": "ivan.petrov@example.com"
+}
+
+### Зарегистрировать покупателя 2
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+  "id": "660e8400-e29b-41d4-a716-446655440002",
+  "fullName": "Мария Сидорова",
+  "email": "maria.sidorova@example.com"
+}
+
+### Получить список всех покупателей
+GET {{baseUrl}}/customers
+
+### Получить профиль покупателя 1
+GET {{baseUrl}}/customers/660e8400-e29b-41d4-a716-446655440001
+
+### Получить статус лояльности покупателя 1
+GET {{baseUrl}}/customers/660e8400-e29b-41d4-a716-446655440001/loyalty
+
+### Обновить профиль покупателя 1
+PUT {{baseUrl}}/customers/660e8400-e29b-41d4-a716-446655440001
+Content-Type: application/json
+
+{
+  "fullName": "Иван Петров (обновлено)",
+  "email": "ivan.new@example.com"
+}
+
+
+### РАБОТА С КАТАЛОГОМ VHS КАССЕТ
+
+### Получить список всех кассет
+GET {{baseUrl}}/cassettes
+
+### Получить одну кассету
+GET {{baseUrl}}/cassettes/550e8400-e29b-41d4-a716-446655440001
+
+### Получить кассеты по жанру "Sci-Fi"
+GET {{baseUrl}}/cassettes/genre/Sci-Fi
+
+### Получить кассеты по режиссёру "Нолан"
+GET {{baseUrl}}/cassettes/director/Нолан
+
+### Обновить кассету (изменить состояние и цену)
+PUT {{baseUrl}}/cassettes/550e8400-e29b-41d4-a716-446655440001
+Content-Type: application/json
+
+{
+  "movieTitle": "Матрица",
+  "condition": "Хорошее",
+  "language": "Русский",
+  "hasSubtitles": false,
+  "price": 350.00,
+  "stock": 4,
+  "description": "Классический фильм о виртуальной реальности"
+}
+
+
+### ОСНОВНАЯ БИЗНЕС-ЛОГИКА: ПОКУПКИ
+
+
+### СОЗДАТЬ ПОКУПКУ 1: Иван покупает Матрицу и Интерстеллар (без скидки)
+### Бизнес-логика:
+### - Проверяет наличие на складе
+### - Списывает кассеты со склада
+### - Рассчитывает бонусы: (400 + 450) / 100 = 8 баллов
+### - Начисляет бонусы покупателю
+POST {{baseUrl}}/purchases
+Content-Type: application/json
+
+{
+  "customerId": "660e8400-e29b-41d4-a716-446655440001",
+  "cassetteIds": [
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002"
+  ],
+  "pointsToSpend": 0
+}
+
+### Получить историю всех покупок
+GET {{baseUrl}}/purchases
+
+### Получить историю покупок покупателя 1
+GET {{baseUrl}}/purchases/customer/660e8400-e29b-41d4-a716-446655440001
+
+### Получить детали покупки (замените ID на ID из ответа на запрос 16)
+GET {{baseUrl}}/purchases/{purchase_id_from_response}
+
+### СОЗДАТЬ ПОКУПКУ 2: Мария покупает 3 кассеты СО СКИДКОЙ БОНУСОВ
+### Сценарий: Мария имеет 150 баллов, тратит 100 баллов на скидку
+### Базовая цена: 400 + 450 + 320 = 1170₽
+### Скидка за баллы: 100₽
+### Итоговая цена: 1170 - 100 = 1070₽
+### Новые бонусы: 1070 / 100 = 10 баллов
+POST {{baseUrl}}/purchases
+Content-Type: application/json
+
+{
+  "customerId": "660e8400-e29b-41d4-a716-446655440002",
+  "cassetteIds": [
+    "550e8400-e29b-41d4-a716-446655440001",
+    "550e8400-e29b-41d4-a716-446655440002",
+    "550e8400-e29b-41d4-a716-446655440003"
+  ],
+  "pointsToSpend": 100
+}
+
+### Добавить бонусы перед тестом (вручную увеличиваем баланс)
+### Для этого создаём несколько покупок, чтобы накопилось достаточно баллов
+POST {{baseUrl}}/purchases
+Content-Type: application/json
+
+{
+  "customerId": "660e8400-e29b-41d4-a716-446655440002",
+  "cassetteIds": [
+    "550e8400-e29b-41d4-a716-446655440004"
+  ],
+  "pointsToSpend": 0
+}
+
+
+### ГЕНЕРАЦИЯ ЧЕКОВ
+
+
+### Получить текстовый чек для покупки (заменить ID)
+GET {{baseUrl}}/purchases/{purchase_id_from_response}/receipt
+
+
+### ОТКАТ И УДАЛЕНИЕ
+
+### Отменить покупку (вернёт кассеты на склад и откатит бонусы)
+DELETE {{baseUrl}}/purchases/{purchase_id_from_response}
+
+### Удалить кассету (только если её нет в истории покупок)
+DELETE {{baseUrl}}/cassettes/550e8400-e29b-41d4-a716-446655440004
+
+### Удалить покупателя
+DELETE {{baseUrl}}/customers/660e8400-e29b-41d4-a716-446655440001
+
+
+### 📊 ПРОВЕРКА РЕЗУЛЬТАТОВ
+
+### Проверить остатки на складе (после всех операций)
+GET {{baseUrl}}/cassettes
+
+### Проверить лояльность после всех операций
+GET {{baseUrl}}/customers/660e8400-e29b-41d4-a716-446655440001/loyalty
+
+### Получить все покупки
+GET {{baseUrl}}/purchases
