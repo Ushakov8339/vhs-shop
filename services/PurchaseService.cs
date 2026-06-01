@@ -21,33 +21,36 @@ public class PurchaseService(
     public async Task<IReadOnlyList<Purchase>> GetAllAsync()
         => await db.Purchases
             .AsNoTracking()
+            .Include(x => x.PurchaseItems)
+            .ThenInclude(x => x.Cassette)
             .OrderByDescending(x => x.CreatedAtUtc)
             .ToListAsync();
 
     public async Task<Purchase?> GetByIdAsync(Guid id)
         => await db.Purchases
             .AsNoTracking()
+            .Include(x => x.PurchaseItems)
+            .ThenInclude(x => x.Cassette)
             .FirstOrDefaultAsync(x => x.Id == id);
 
     public async Task<IReadOnlyList<Purchase>> GetByCustomerIdAsync(Guid customerId)
         => await db.Purchases
             .AsNoTracking()
+            .Include(x => x.PurchaseItems)
+            .ThenInclude(x => x.Cassette)
             .Where(x => x.CustomerId == customerId)
             .OrderByDescending(x => x.CreatedAtUtc)
             .ToListAsync();
 
     public async Task<Purchase> CreateAsync(CreatePurchaseRequest request)
     {
-        // Валидация
         if (request.CassetteIds.Length == 0)
             throw new ArgumentException("Необходимо выбрать хотя бы одну кассету.");
 
-        // Проверка существования покупателя
         var customer = await db.Customers.FirstOrDefaultAsync(x => x.Id == request.CustomerId);
         if (customer is null)
             throw new InvalidOperationException($"Покупатель с ID {request.CustomerId} не найден.");
 
-        // Получаем инфо по всем кассетам
         var cassetteIds = request.CassetteIds.Distinct().ToArray();
         var cassettesList = await db.Cassettes
             .Where(c => cassetteIds.Contains(c.Id))
@@ -56,7 +59,6 @@ public class PurchaseService(
         if (cassettesList.Count != cassetteIds.Length)
             throw new InvalidOperationException("Некоторые кассеты не найдены в каталоге.");
 
-        // Проверяем наличие на складе
         foreach (var cassId in request.CassetteIds)
         {
             var cassette = cassettesList.FirstOrDefault(c => c.Id == cassId);
@@ -68,7 +70,6 @@ public class PurchaseService(
                     $"Кассета '{cassette.MovieTitle}' отсутствует на складе.");
         }
 
-        // Рассчитываем базовую цену (сумма цен всех выбранных кассет)
         decimal totalPrice = 0;
         foreach (var cassId in request.CassetteIds)
         {
@@ -77,17 +78,15 @@ public class PurchaseService(
                 totalPrice += cassette.Price;
         }
 
-        // Применяем скидку за бонусы (если покупатель захотел их потратить)
         int spentPoints = 0;
         if (request.PointsToSpend > 0)
         {
             spentPoints = await loyalty.SpendPointsAsync(request.CustomerId, request.PointsToSpend);
-            totalPrice -= spentPoints; // 1 балл = 1 рубль скидка
+            totalPrice -= spentPoints;
             if (totalPrice < 0)
                 totalPrice = 0;
         }
 
-        // Списываем со склада все выбранные кассеты
         foreach (var cassId in request.CassetteIds)
         {
             var cassette = await db.Cassettes.FirstOrDefaultAsync(c => c.Id == cassId);
@@ -97,10 +96,8 @@ public class PurchaseService(
             }
         }
 
-        // Рассчитываем новые бонусы по финальной цене (после скидки)
         int earnedPoints = loyalty.CalculateEarnedPoints(totalPrice);
 
-        // Создаём запись о покупке
         var purchase = new Purchase
         {
             Id = Guid.NewGuid(),
@@ -113,8 +110,23 @@ public class PurchaseService(
         };
 
         db.Purchases.Add(purchase);
+        await db.SaveChangesAsync();
 
-        // Начисляем бонусы
+        foreach (var cassId in request.CassetteIds)
+        {
+            var cassette = cassettesList.FirstOrDefault(c => c.Id == cassId);
+            if (cassette is not null)
+            {
+                var purchaseItem = new PurchaseItem
+                {
+                    PurchaseId = purchase.Id,
+                    CassetteId = cassId,
+                    PriceAtPurchase = cassette.Price
+                };
+                db.PurchaseItems.Add(purchaseItem);
+            }
+        }
+
         await loyalty.AddPointsAsync(request.CustomerId, earnedPoints);
 
         await db.SaveChangesAsync();
@@ -124,11 +136,12 @@ public class PurchaseService(
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var purchase = await db.Purchases.FirstOrDefaultAsync(x => x.Id == id);
+        var purchase = await db.Purchases
+            .Include(x => x.PurchaseItems)
+            .FirstOrDefaultAsync(x => x.Id == id);
         if (purchase is null)
             return false;
 
-        // Возвращаем кассеты на склад
         foreach (var cassId in purchase.CassetteIds)
         {
             var cassette = await db.Cassettes.FirstOrDefaultAsync(c => c.Id == cassId);
@@ -138,7 +151,6 @@ public class PurchaseService(
             }
         }
 
-        // Откатываем начисленные бонусы
         var customer = await db.Customers.FirstOrDefaultAsync(x => x.Id == purchase.CustomerId);
         if (customer is not null)
         {

@@ -40,5 +40,9 @@ public class Purchase
     /// Количество начисленных бонусных баллов
     /// </summary>
     public int EarnedPoints { get; set; }
+
+    public Customer? Customer { get; set; }
+
+    public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();
 }
 

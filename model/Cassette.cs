@@ -74,5 +74,7 @@ public class Cassette
     /// Краткое описание фильма
     /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();
 }
 

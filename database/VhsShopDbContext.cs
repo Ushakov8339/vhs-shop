@@ -12,6 +12,8 @@ public class VhsShopDbContext(DbContextOptions<VhsShopDbContext> options) : DbCo
     public DbSet<Cassette> Cassettes { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Purchase> Purchases { get; set; }
+    public DbSet<ReceiptFile> Receipts { get; set; }
+    public DbSet<PurchaseItem> PurchaseItems { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +48,38 @@ public class VhsShopDbContext(DbContextOptions<VhsShopDbContext> options) : DbCo
             entity.Property(x => x.CassetteIds)
                 .HasColumnType("uuid[]")
                 .IsRequired();
+
+            entity.HasOne(x => x.Customer)
+                .WithMany(c => c.Purchases)
+                .HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ReceiptFile>(entity =>
+        {
+            entity.HasKey(x => x.PurchaseId);
+            entity.Property(x => x.Content).IsRequired();
+
+            entity.HasOne(x => x.Purchase)
+                .WithOne()
+                .HasForeignKey<ReceiptFile>(x => x.PurchaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PurchaseItem>(entity =>
+        {
+            entity.HasKey(x => new { x.PurchaseId, x.CassetteId });
+            entity.Property(x => x.PriceAtPurchase).HasPrecision(18, 2);
+
+            entity.HasOne(x => x.Purchase)
+                .WithMany(p => p.PurchaseItems)
+                .HasForeignKey(x => x.PurchaseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Cassette)
+                .WithMany(c => c.PurchaseItems)
+                .HasForeignKey(x => x.CassetteId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

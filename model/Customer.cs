@@ -24,5 +24,7 @@ public class Customer
     /// Текущее количество бонусных баллов программы лояльности
     /// </summary>
     public int LoyaltyPoints { get; set; }
+
+    public ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
 }
 

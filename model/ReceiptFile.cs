@@ -19,5 +19,7 @@ public class ReceiptFile
     /// Дата создания чека
     /// </summary>
     public DateTime CreatedAtUtc { get; set; }
+
+    public Purchase? Purchase { get; set; }
 }
 
