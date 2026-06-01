@@ -14,13 +14,6 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio cache/options directory
-.vs/
-
-# Visual Studio Code
-.vscode/
-*.code-workspace
-
 # Rider
 .idea/
 *.sln.iml
